@@ -1,5 +1,4 @@
 import my_sort
+from pathlib import Path
 
-
-print(my_sort.normalize("тестСтрока ідвпро 656 656в66"))
-print(my_sort.normalize.__doc__)
+my_sort.sort_dir(Path("C:\\Users\\Admin\\Desktop\\"))
