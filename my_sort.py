@@ -3,26 +3,31 @@ import re
 from pathlib import Path
 import shutil
 
-
-images_suffix = ('JPEG', 'PNG', 'JPG', 'SVG')
-documents_suffix = ('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX')
-audio_suffix = ('MP3', 'OGG', 'WAV', 'AMR')
-video_suffix = ('AVI', 'MP4', 'MOV', 'MKV')
-archives_suffix = ('ZIP', 'GZ', 'TAR')
+IMAGES_SUFFIX = ('JPEG', 'PNG', 'JPG', 'SVG')
+DOCUMENTS_SUFFIX = ('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX')
+AUDIO_SUFFIX = ('MP3', 'OGG', 'WAV', 'AMR')
+VIDEO_SUFFIX = ('AVI', 'MP4', 'MOV', 'MKV')
+ARCHIVES_SUFFIX = ('ZIP', 'GZ', 'TAR')
 
 
 def main():
 
-    if len(sys.argv) < 2:
-        return None
+    temp = 'C:/MyPyton/python-course/test1'
+    # if len(sys.argv) < 2:
+    if len(temp) < 2:
+        print("Не вказано теку для обробки")
     else:
-        dir_name = sys.argv[1]
-        path = Path(dir_name)
+        # path = Path(sys.argv[1])
+        path = Path(temp)
         if path.exists() and path.is_dir():
-            sort_dir(path)
+            print(f"Початок роботи {path.resolve()}")
+            result = sort_dir(path)
+            # TODO return {'result_list': result_list, 'to_do_suffix': to_do_suffix, 'unknown_suffix': unknown_suffix}
+        else:
+            print("Не вірна тека для обробки")
 
 
-def normalize(in_string):
+def normalize(in_string: str) -> str:
     """Replace cirilan symbils on latitians and change other to _ (except digit)
 
     Args:
@@ -39,45 +44,48 @@ def normalize(in_string):
 
 
 def sort_archives(file_path):
+    print('0')
     # move file TODO
 
 
-def sort_video(file_path):
-    # move file TODO
+def move_file(file_path: Path, destany: str):
+    Path(str(file_path.resolve().parent) + '\\' + destany.upper()
+         ).mkdir(exist_ok=True, parents=True)
+
+    shutil.move(str(file_path.resolve()), str(file_path.resolve().parent) + '\\' +
+                destany.upper() + '\\' + normalize(file_path.stem) + file_path.suffix)
 
 
-def sort_audio(file_path):
-    # move file TODO
+def sort_dir(path: Path):
 
+    result_list = []
+    to_do_suffix = []
+    unknown_suffix = []
 
-def sort_images(file_path):
-    # move file TODO
-
-
-def sort_documents(file_path):
-    # move file TODO
-
-
-def sort_dir(path):
     for p in path.iterdir():
         if p.is_dir():
             new_dir_name = normalize(p.name)
             sort_dir(p)
             # rename p TODO
         else:
-            new_file_name = normalize(p.name.removesuffix(p.suffix)) + p.suffix
-            if p.suffix.removeprefix('.') in images_suffix:
-                sort_images(p, new_file_name)
-            elif p.suffix.removeprefix('.') in documents_suffix:
-                sort_documents(p, new_file_name)
-            elif p.suffix.removeprefix('.') in audio_suffix:
-                sort_audio(p, new_file_name)
-            elif p.suffix.removeprefix('.') in video_suffix:
-                sort_video(p, new_file_name)
-            elif p.suffix.removeprefix('.') in archives_suffix:
-                sort_archives(p, new_file_name)
+            if p.suffix.removeprefix('.').upper() in IMAGES_SUFFIX:
+                move_file(p, 'images')
+            elif p.suffix.removeprefix('.').upper() in DOCUMENTS_SUFFIX:
+                move_file(p, 'documents')
+            elif p.suffix.removeprefix('.').upper() in AUDIO_SUFFIX:
+                move_file(p, 'audio')
+            elif p.suffix.removeprefix('.').upper() in VIDEO_SUFFIX:
+                move_file(p, 'video')
+            elif p.suffix.removeprefix('.').upper() in ARCHIVES_SUFFIX:
+                sort_archives(p)
             else:
+                if not p.suffix in unknown_suffix:
+                    unknown_suffix.append(p.suffix)
+
                 # rename p TODO
+
+    return {'result_list': result_list, 'to_do_suffix': to_do_suffix,
+            'unknown_suffix': unknown_suffix}
 
 
 if __name__ == '__main__':
