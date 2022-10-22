@@ -6,7 +6,7 @@ import shutil
 from universal_func import normalize
 
 IMAGES_SUFFIX = ('JPEG', 'PNG', 'JPG', 'SVG')
-DOCUMENTS_SUFFIX = ('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX')
+DOCUMENTS_SUFFIX = ('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX', 'PPT')
 AUDIO_SUFFIX = ('MP3', 'OGG', 'WAV', 'AMR')
 VIDEO_SUFFIX = ('AVI', 'MP4', 'MOV', 'MKV')
 ARCHIVES_SUFFIX = ('ZIP', 'GZ', 'TAR')
@@ -14,13 +14,13 @@ ARCHIVES_SUFFIX = ('ZIP', 'GZ', 'TAR')
 
 def main():
     # TODO зчитування налаштування з іні файлу або за замовчанням
-    if sys.argv[1]:
+    if len(sys.argv) < 2:
         print("Не вказано теку для обробки")
     else:
         path = Path(sys.argv[1])
         if path.exists() and path.is_dir():
             print(f"Початок роботи {path.resolve()}")
-            if sys.argv[2]:
+            if len(sys.argv) > 2 and sys.argv[2] != None:
                 path_out = Path(sys.argv[2])
             else:
                 path_out = path
@@ -29,13 +29,22 @@ def main():
                 exist_ok=True, parents=True)
             # тека готова можна виконувати сортування
             result = sort_dir(path, Path(path_out))
-            for key in result['result_list'].keys:
-                print(result['result_list'][key])
-            print(result['to_do_suffix'])
-            print(result['unknown_suffix'])
-            print(result['trobles_list'])
-
-            # TODO return {'result_list': result_list, 'to_do_suffix': to_do_suffix, 'unknown_suffix': unknown_suffix, 'trobles_list': trobles_list}
+            if not len(result['result_list']):
+                print("|----------|----------...\n")
+                print("|{:^10}|{:^100}\n".format("Type", "file"))
+                print("|----------|----------...\n")
+            for key in result['result_list'].keys():
+                for fil in result['result_list'][key]:
+                    print("|{:^10}|{:<100}".format(key, fil))
+            if not len(result['to_do_suffix']):
+                print("Розширення файлів, що опрацювані:\n")
+                print(result['to_do_suffix'])
+            if not len(result['unknown_suffix']):
+                print("Виявлено розширення файлів, що не були вказані:\n")
+                print(result['unknown_suffix'])
+            if not len(result['trobles_list']):
+                print("Помилки в роботі алгоритму:\n")
+                print(result['trobles_list'])
         else:
             print("Не вірна тека для обробки")
 
@@ -63,6 +72,11 @@ def sort_archives(file_path: Path, out_dir: Path) -> str:
         shutil.unpack_archive(file_path.resolve(), new_dir)
     except shutil.ReadError:
         new_dir = "?errAR"
+
+    try:
+        file_path.resolve().unlink()
+    except FileNotFoundError:
+        new_dir = "?errDF"
 
     return new_dir
 
@@ -113,14 +127,14 @@ def sort_dir(path: Path, out_dir: Path) -> dict:
 
     for p in path.iterdir():
         if p.is_dir():
-            if not p.name in result_list.keys:
+            if not str(p.name) in result_list.keys():
                 # магія
                 dir_res = sort_dir(p, out_dir)
                 # доповнення результатів теки
-                for key in result_list.keys:
+                for key in result_list.keys():
                     result_list[key].extend(dir_res['result_list'][key])
-                to_do_suffix.add(dir_res['to_do_suffix'])
-                unknown_suffix.add(dir_res['unknown_suffix'])
+                to_do_suffix = to_do_suffix | dir_res['to_do_suffix']
+                unknown_suffix = unknown_suffix | dir_res['unknown_suffix']
                 trobles_list.extend(dir_res['trobles_list'])
 
                 # перевірка на пусту теку
